@@ -17,6 +17,9 @@ app = FastAPI(
 
 
 def create_job_id() -> str:
+    # `job_id` twofold role here:
+    #   - Unique identifier of query jobs to be queued, and have results retrieved
+    #   - Extract timestamp information, to determine expiry of job
     return str(uuid.uuid1())
 
 def get_datetime_from_uuid1(job_id: uuid.UUID) -> datetime.datetime:
@@ -49,20 +52,21 @@ async def protein_query(background_tasks: BackgroundTasks, body: ProteinQuery):
             status_code=400,
             detail="Protein sequence queried found to be invalid. Enter only valid amino acid letters."
         )
-    # `job_id` twofold role here:
-    #   - Unique identifier of query jobs to be queued, and have results retrieved
-    #   - Extract timestamp information, to determine expiry of job
     job_id = create_job_id()
-    background_tasks.add_task(run_diamond_blastp, protein_seq=protein_seq, job_id = job_id)
-    return {"job_id": job_id}
+    background_tasks.add_task(
+        run_diamond_blastp,
+        protein_seq=protein_seq,
+        job_id = job_id
+    )
+    return QueryResponse(job_id=job_id)
 
 
 @app.get("/results/proteins", response_model=list[QueryResult])
 async def get_results_index():
-    files = [file for file in os.listdir(settings.PROTEIN_QUERIES_DIR) if ".query" in file]
     results = [
         QueryResult.retrieve(settings.protein_query_job_id(filename))
-        for filename in files
+        for filename in os.listdir(settings.PROTEIN_QUERIES_DIR)
+        if filename.endswith(settings.PROTEIN_QUERIES_SUFFIX)
     ]
     return results
 
