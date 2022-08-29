@@ -8,7 +8,7 @@ import datetime
 import os
 import uuid
 
-from models import ProteinQuery, QueryResponse, QueryResult, QueryStatus
+from models import ProteinQuery, QueryResponse, ProteinResult
 from config import settings
 
 app = FastAPI(
@@ -33,7 +33,7 @@ def protein_seq_valid(protein_seq: str) -> bool:
 
 def run_diamond_blastp(protein_seq: str, job_id: str) -> None:
     with open(settings.protein_query_filepath(job_id), "w") as file:
-        file.write(protein_seq)
+        file.write(f">{job_id}\n{protein_seq}\n")
     # run diamond search
     # TODO
     return None
@@ -61,21 +61,26 @@ async def protein_query(background_tasks: BackgroundTasks, body: ProteinQuery):
     return QueryResponse(job_id=job_id)
 
 
-@app.get("/results/proteins", response_model=list[QueryResult])
+@app.get(
+    "/results/proteins",
+    response_model=list[ProteinResult],
+    response_model_exclude_none=True
+)
 async def get_results_index():
+    # TODO: paginate?
     results = [
-        QueryResult.retrieve(settings.protein_query_job_id(filename))
+        ProteinResult.retrieve(settings.protein_query_job_id(filename), with_data=False)
         for filename in os.listdir(settings.PROTEIN_QUERIES_DIR)
         if filename.endswith(settings.PROTEIN_QUERIES_SUFFIX)
     ]
     return results
 
 
-@app.get("/results/proteins/{job_id}", response_model=QueryResult)
+@app.get("/results/proteins/{job_id}", response_model=ProteinResult)
 async def get_result(job_id: str):
     if not os.path.exists(settings.protein_query_filepath(job_id)):
         return HTTPException(
             status_code=400,
             detail="Invalid job_id. It may have expired or is not in the system.",
         )
-    return QueryResult.retrieve(job_id)
+    return ProteinResult.retrieve(job_id)

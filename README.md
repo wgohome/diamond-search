@@ -18,3 +18,11 @@ This service is implemented as a RESTful API (with FastAPI), and is expected to:
 ### Reference
 
 For Open API documentation, refer to `/docs` path.
+
+## Diamond database preparation
+
+PEP fasta files are obtained for every species. The PEP files' gene identifiers are corrected to match gene identifiers from the TPM matrices used for the Plant Gene Expression Omnibus.
+
+Diamond's `makedb` is run against the concatenated PEP files, to create a diamond protein database.
+
+Protein sequence queries can then be made against the Diamond db.
