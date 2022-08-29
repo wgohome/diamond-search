@@ -16,6 +16,12 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    os.makedirs(settings.PROTEIN_QUERIES_DIR, exist_ok=True)
+    os.makedirs(settings.PROTEIN_RESULTS_DIR, exist_ok=True)
+
+
 def create_job_id() -> str:
     # `job_id` twofold role here:
     #   - Unique identifier of query jobs to be queued, and have results retrieved

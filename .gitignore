@@ -6,3 +6,6 @@ __pycache__
 venv
 # .vscode
 .env
+
+# For query input and result files
+data/*

@@ -2,10 +2,11 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    PROTEIN_QUERIES_DIR: str = "queries/proteins"
+    # When updating data directories, do update .gitignore files too
+    PROTEIN_QUERIES_DIR: str = "data/queries/proteins"
+    PROTEIN_RESULTS_DIR: str = "data/results/proteins"
     PROTEIN_QUERIES_SUFFIX: str = ".protein.query"
     PROTEIN_RESULTS_SUFFIX: str = ".diamond.out"
-    PROTEIN_RESULTS_DIR: str = "results/proteins"
 
     def protein_query_filepath(self, job_id: str) -> str:
         return f"{self.PROTEIN_QUERIES_DIR}/{job_id}{self.PROTEIN_QUERIES_SUFFIX}"
