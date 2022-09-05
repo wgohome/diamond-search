@@ -75,4 +75,7 @@ class ProteinResult(BaseModel):
             )
             for row in reader
         ]
+        print(f"Querying for {filepath}")
+        print(results)
+        print(open(filepath, "r").read())
         return results
