@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     PROTEIN_QUERIES_SUFFIX: str = ".protein.query"
     PROTEIN_RESULTS_SUFFIX: str = ".diamond.out"
 
+    DAYS_DELETE_QUERY: int = 14
+
     def protein_query_filepath(self, job_id: str) -> str:
         return f"{self.PROTEIN_QUERIES_DIR}/{job_id}{self.PROTEIN_QUERIES_SUFFIX}"
 

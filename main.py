@@ -1,3 +1,5 @@
+import random
+from unittest import result
 from fastapi import (
     BackgroundTasks,
     FastAPI,
@@ -28,8 +30,23 @@ def create_job_id() -> str:
     #   - Extract timestamp information, to determine expiry of job
     return str(uuid.uuid1())
 
-def get_datetime_from_uuid1(job_id: uuid.UUID) -> datetime.datetime:
-    return datetime.datetime(1582, 10, 15) + datetime.timedelta(microseconds=job_id.time // 10)
+def get_datetime_from_uuid1(job_uuid: uuid.UUID) -> datetime.datetime:
+    return datetime.datetime(1582, 10, 15) + datetime.timedelta(microseconds=job_uuid.time // 10)
+
+
+def make_uuid1_from_datetime(given_dt: datetime.datetime) -> uuid.UUID:
+    timestamp = given_dt.timestamp()
+    nanoseconds = int(timestamp * 1e9)
+    # 0x01b21dd213814000 is the number of 100-ns intervals between the
+    # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
+    timestamp = int(nanoseconds//100) + 0x01b21dd213814000
+    time_low = timestamp & 0xffffffff
+    time_mid = (timestamp >> 32) & 0xffff
+    time_hi_version = (timestamp >> 48) & 0x0fff
+    clock_seq = random.randrange(1<<14)
+    clock_seq_low = clock_seq & 0xff
+    clock_seq_hi_variant = (clock_seq >> 8) & 0x3f
+    return uuid.UUID(fields=(time_low, time_mid, time_hi_version, clock_seq_low, clock_seq_hi_variant, uuid.getnode()))
 
 
 def protein_seq_valid(protein_seq: str) -> bool:
@@ -38,11 +55,31 @@ def protein_seq_valid(protein_seq: str) -> bool:
 
 
 def run_diamond_blastp(protein_seq: str, job_id: str) -> None:
+    # Write query
     with open(settings.protein_query_filepath(job_id), "w") as file:
         file.write(f">{job_id}\n{protein_seq}\n")
-    # run diamond search
-    # TODO
+    # Run query
+    os.system(f"./diamond blastp -q {settings.protein_query_filepath(job_id)} -o {settings.protein_result_filepath(job_id)} -d plants_all")
     return None
+
+
+def delete_query_and_results() -> None:
+    job_ids = [
+        settings.protein_query_job_id(filename)
+        for filename in os.listdir(settings.PROTEIN_QUERIES_DIR)
+        if filename.endswith(settings.PROTEIN_QUERIES_SUFFIX)
+    ]
+    expired_job_ids = [
+        job_id
+        for job_id in job_ids
+        if get_datetime_from_uuid1(uuid.UUID(job_id)) < (datetime.datetime.now() - datetime.timedelta(days=settings.DAYS_DELETE_QUERY))
+    ]
+    for job_id in expired_job_ids:
+        query_filepath = settings.protein_query_filepath(job_id)
+        result_filepath = settings.protein_result_filepath(job_id)
+        os.remove(query_filepath)
+        if os.path.isfile(result_filepath):
+            os.remove(result_filepath)
 
 
 @app.get("/")
@@ -64,6 +101,7 @@ async def protein_query(background_tasks: BackgroundTasks, body: ProteinQuery):
         protein_seq=protein_seq,
         job_id = job_id
     )
+    background_tasks.add_task(delete_query_and_results)
     return QueryResponse(job_id=job_id)
 
 
