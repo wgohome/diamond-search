@@ -33,7 +33,7 @@ class DiamondResultRow(BaseModel):
     mismatches: int
     gap_openings: int
     e_value: str
-    bit_score: int
+    bit_score: float
 
 
 class ProteinResult(BaseModel):
@@ -71,7 +71,7 @@ class ProteinResult(BaseModel):
                 mismatches=int(row[4]),
                 gap_openings=int(row[5]),
                 e_value=row[10],
-                bit_score=int(row[11]),
+                bit_score=float(row[11]),
             )
             for row in reader
         ]
