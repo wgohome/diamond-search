@@ -22,6 +22,8 @@ app = FastAPI(
 async def startup_event():
     os.makedirs(settings.PROTEIN_QUERIES_DIR, exist_ok=True)
     os.makedirs(settings.PROTEIN_RESULTS_DIR, exist_ok=True)
+    if not os.path.isfile("diamond") or not os.path.isfile("plants_all.dmnd"):
+        os.system("sh run_setup.sh")
 
 
 def create_job_id() -> str:
@@ -29,6 +31,7 @@ def create_job_id() -> str:
     #   - Unique identifier of query jobs to be queued, and have results retrieved
     #   - Extract timestamp information, to determine expiry of job
     return str(uuid.uuid1())
+
 
 def get_datetime_from_uuid1(job_uuid: uuid.UUID) -> datetime.datetime:
     return datetime.datetime(1582, 10, 15) + datetime.timedelta(microseconds=job_uuid.time // 10)
@@ -59,7 +62,7 @@ def run_diamond_blastp(protein_seq: str, job_id: str) -> None:
     with open(settings.protein_query_filepath(job_id), "w") as file:
         file.write(f">{job_id}\n{protein_seq}\n")
     # Run query
-    os.system(f"./diamond blastp -q {settings.protein_query_filepath(job_id)} -o {settings.protein_result_filepath(job_id)} -d plants_all")
+    os.system(f"./diamond blastp -q {settings.protein_query_filepath(job_id)} -o {settings.protein_result_filepath(job_id)} -d {settings.DIAMOND_DB_NAME}")
     return None
 
 
@@ -84,6 +87,8 @@ def delete_query_and_results() -> None:
 
 @app.get("/")
 def redirect_to_docs():
+    if not os.path.isfile("diamond"):
+        os.system("sh run_setup.sh")
     return RedirectResponse("/docs")
 
 
