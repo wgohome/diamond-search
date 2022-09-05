@@ -8,6 +8,7 @@ venv
 .env
 
 # For query input and result files
+data
 data/**
 # For diamond files
 diamond*
