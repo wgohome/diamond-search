@@ -2,6 +2,8 @@
 
 [DIAMOND](https://github.com/bbuchfink/diamond) is an alternative to BLAST for protein sequence search
 
+## General
+
 ### Objective
 
 This service is implemented as a RESTful API (with FastAPI), and is expected to:
@@ -17,12 +19,19 @@ This service is implemented as a RESTful API (with FastAPI), and is expected to:
 
 ### Reference
 
-For Open API documentation, refer to `/docs` path.
+For OpenAPI documentation, refer to `/docs` path.
 
 ## Diamond database preparation
 
-PEP fasta files are obtained for every species. The PEP files' gene identifiers are corrected to match gene identifiers from the TPM matrices used for the Plant Gene Expression Omnibus.
+PEP fasta files are obtained for every species. The PEP files' gene identifiers are corrected to match gene identifiers from the TPM matrices used for the Plant Gene Expression Omnibus. (Refer to Omnibus Uploader docs for more details)
 
 Diamond's `makedb` is run against the concatenated PEP files, to create a diamond protein database.
 
 Protein sequence queries can then be made against the Diamond db.
+
+## Deployment
+
+This service is deployed in Google Compute Engine, exposed to the internet via nginx. This allows us to persist local result files from the searches, as compared to the ephemeral nature of Google Cloud Run service.
+
+[Reference 1](https://dev.to/nick_langat/how-to-deploy-a-fastapi-app-to-aws-ec2-server-46d4)
+[Reference 2](https://lcalcagni.medium.com/deploy-your-fastapi-to-aws-ec2-using-nginx-aa8aa0d85ec7)
