@@ -6,6 +6,7 @@ from fastapi import (
     HTTPException,
 )
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import os
 import uuid
@@ -15,6 +16,17 @@ from config import settings
 
 app = FastAPI(
     title="Plant Protein Search"
+)
+
+origins = [
+    "*"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
