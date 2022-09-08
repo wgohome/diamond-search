@@ -1,5 +1,6 @@
 import csv
 from enum import Enum
+from http.client import PROCESSING
 import os
 from pydantic import (
     BaseModel,
@@ -47,7 +48,7 @@ class ProteinResult(BaseModel):
         if os.path.exists(filepath):
             return cls(
                 job_id=job_id,
-                status=QueryStatus.COMPLETED,
+                status=QueryStatus.PROCESSING if cls._file_empty(filepath) else QueryStatus.COMPLETED,
                 result=cls._parse_result(filepath) if with_data else None
             )
         else:
@@ -55,6 +56,11 @@ class ProteinResult(BaseModel):
                 job_id=job_id,
                 status=QueryStatus.PROCESSING,
             )
+
+    @classmethod
+    def _file_empty(cls, filepath: str):
+        with open(filepath, "r") as file:
+            return file.read() == ""
 
     @classmethod
     def _parse_result(cls, filepath: str) -> list[DiamondResultRow]:
@@ -75,7 +81,4 @@ class ProteinResult(BaseModel):
             )
             for row in reader
         ]
-        print(f"Querying for {filepath}")
-        print(results)
-        print(open(filepath, "r").read())
         return results
