@@ -1,5 +1,5 @@
 import random
-from unittest import result
+import time
 from fastapi import (
     BackgroundTasks,
     FastAPI,
@@ -10,7 +10,7 @@ import datetime
 import os
 import uuid
 
-from models import ProteinQuery, QueryResponse, ProteinResult
+from models import ProteinQuery, QueryResponse, ProteinResult, QueryStatus
 from config import settings
 
 app = FastAPI(
@@ -108,6 +108,25 @@ async def protein_query(background_tasks: BackgroundTasks, body: ProteinQuery):
     )
     background_tasks.add_task(delete_query_and_results)
     return QueryResponse(job_id=job_id)
+
+
+# To wait for the search to be done and return the results
+@app.post("/queries/proteins/wait", response_model=ProteinResult)
+async def protein_query_with_wait(background_tasks: BackgroundTasks, body: ProteinQuery):
+    protein_seq = body.protein_seq
+    if protein_seq_valid(protein_seq) is False:
+        raise HTTPException(
+            status_code=400,
+            detail="Protein sequence queried found to be invalid. Enter only valid amino acid letters."
+        )
+    job_id = create_job_id()
+    run_diamond_blastp(protein_seq=protein_seq, job_id=job_id)
+    result = ProteinResult.retrieve(job_id)
+    background_tasks.add_task(delete_query_and_results)
+    while result.status != QueryStatus.COMPLETED:
+        time.sleep(3)
+        result = ProteinResult.retrieve(job_id)
+    return result
 
 
 @app.get(
