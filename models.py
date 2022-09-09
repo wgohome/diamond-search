@@ -2,6 +2,7 @@ import csv
 from enum import Enum
 from http.client import PROCESSING
 import os
+import re
 from pydantic import (
     BaseModel,
     validator,
@@ -29,6 +30,7 @@ class QueryResponse(BaseModel):
 
 class DiamondResultRow(BaseModel):
     target: str
+    taxid: int
     p_identity: float
     algn_length: int
     mismatches: int
@@ -71,7 +73,8 @@ class ProteinResult(BaseModel):
         )
         results = [
             DiamondResultRow(
-                target=row[1],
+                target=cls._extract_gene_label(row[1]),
+                taxid=cls._extract_taxid(row[1]),
                 p_identity=float(row[2]),
                 algn_length=int(row[3]),
                 mismatches=int(row[4]),
@@ -82,3 +85,17 @@ class ProteinResult(BaseModel):
             for row in reader
         ]
         return results
+
+    @staticmethod
+    def _extract_taxid(label: str) -> int:
+        match = re.match(r"^taxid(\d{3,8})_(.*)$", label)
+        if match is None or len(match.groups()) < 2:
+            return 0
+        return int(match.group(1))
+
+    @staticmethod
+    def _extract_gene_label(label: str) -> str:
+        match = re.match(r"^taxid(\d{3,8})_(.*)$", label)
+        if match is None or len(match.groups()) < 2:
+            return ""
+        return match.group(2)
