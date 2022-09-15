@@ -6,4 +6,4 @@ rm diamond-linux64.tar.gz
 
 # Download the database
 # Store preindexed diamond db in google drive and prep a download link
-wget "https://drive.google.com/uc?export=download&id=14PdNqdFDR8iItBC4AMLETZNdjiqKpVAP&confirm=t" -O plants_all.dmnd
+wget "https://drive.google.com/uc?export=download&id=1uhu7Il-thPwUn4Vw2mAvttupc9wyQJw6&confirm=t" -O plants_all.dmnd
